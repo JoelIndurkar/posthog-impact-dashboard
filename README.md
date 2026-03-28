@@ -26,6 +26,8 @@ python scripts/fetch_data.py
 npm run dev
 ```
 
+<img width="1918" height="951" alt="Screenshot 2026-03-27 at 11 47 50 PM" src="https://github.com/user-attachments/assets/afce5ab3-9fa6-4c47-8285-16b885275c88" />
+
 The data script outputs `public/dashboard-data.json`. The frontend reads this file statically — no runtime API calls required.
 
 ## The Impact Model
