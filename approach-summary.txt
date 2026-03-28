@@ -1,0 +1,7 @@
+This dashboard answers "who are the most impactful engineers at PostHog?" using 90 days of GitHub data — 7,543 PRs across 115 engineers.
+
+Impact is scored across three pillars: Execution Quality (40%), measuring DORA-aligned metrics like merge cadence, lead time, and change failure rate alongside PR effort; Collaboration & Review Quality (30%), using PageRank on a directed review graph where edges are weighted by review count, comment depth, and the reviewer's own execution quality; and Code Health (30%), tracking code churn and merge reliability to capture what happens after code ships.
+
+The key insight: DORA metrics measure delivery process, not team-level impact. They miss collaboration dynamics entirely. By running PageRank on a DORA-weighted review graph, the model surfaces engineers who are central to the team's code quality — not just those who ship the most PRs. Reviews from strong engineers with substantive comments carry more weight than rubber-stamp approvals, and code that requires immediate rework is penalized through churn analysis.
+
+The data pipeline uses Python with NetworkX for graph analysis, fetching via GitHub's GraphQL API. The frontend is a Next.js app reading a static JSON file — no runtime API calls. Deployed on Vercel.
