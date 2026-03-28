@@ -53,10 +53,10 @@ function NodeDetail({
       className="absolute top-3 right-3 z-20 rounded-xl detail-slide-in"
       style={{
         width: 280,
-        background: "rgba(9, 12, 20, 0.97)",
+        background: "rgba(255,255,255,0.97)",
         backdropFilter: "blur(20px)",
-        border: "1px solid rgba(249,115,22,0.2)",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
         pointerEvents: "auto",
         maxHeight: "calc(100% - 24px)",
         overflowY: "auto",
@@ -73,7 +73,7 @@ function NodeDetail({
           style={{ border: "2px solid rgba(249,115,22,0.35)" }}
         />
         <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-bold text-white truncate" style={mono}>
+          <div className="text-[13px] font-bold truncate" style={{ color: "var(--text-primary)", ...mono }}>
             {engineer.login}
           </div>
           <div className="text-[10px]" style={{ color: "var(--accent)", ...mono }}>
@@ -82,8 +82,8 @@ function NodeDetail({
         </div>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 transition-colors text-xs"
-          style={mono}
+          className="w-6 h-6 rounded-md flex items-center justify-center hover:bg-black/5 transition-colors text-xs"
+          style={{ color: "var(--text-muted)", ...mono }}
         >
           ✕
         </button>
@@ -92,13 +92,13 @@ function NodeDetail({
       {/* Formula — human readable */}
       <div
         className="mx-3 mb-2 rounded-lg px-2.5 py-1.5 text-[9px] leading-relaxed"
-        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", ...mono }}
+        style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)", ...mono }}
       >
-        <span style={{ color: "#10b981" }}>Exec {Math.round(engineer.executionQualityScore * 100)}</span>
+        <span style={{ color: "#059669" }}>Exec {Math.round(engineer.executionQualityScore * 100)}</span>
         <span style={{ color: "var(--text-muted)" }}> × 40% + </span>
-        <span style={{ color: "#3b82f6" }}>Collab {Math.round(engineer.collaborationScore * 100)}</span>
+        <span style={{ color: "#2563eb" }}>Collab {Math.round(engineer.collaborationScore * 100)}</span>
         <span style={{ color: "var(--text-muted)" }}> × 30% + </span>
-        <span style={{ color: "#a78bfa" }}>Health {Math.round(engineer.codeHealthScore * 100)}</span>
+        <span style={{ color: "#7c3aed" }}>Health {Math.round(engineer.codeHealthScore * 100)}</span>
         <span style={{ color: "var(--text-muted)" }}> × 30% = </span>
         <span className="font-bold" style={{ color: "var(--accent)" }}>{(engineer.impactScore * 100).toFixed(1)}</span>
       </div>
@@ -106,10 +106,10 @@ function NodeDetail({
       {/* 3 Pillars — readable */}
       <div className="mx-3 mb-2 flex flex-col gap-1.5">
         {/* Execution */}
-        <div className="rounded-lg p-2" style={{ background: "rgba(16,185,129,0.05)" }}>
+        <div className="rounded-lg p-2" style={{ background: "rgba(5,150,105,0.05)" }}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] font-medium" style={{ color: "#10b981", ...mono }}>Execution Quality</span>
-            <span className="text-[11px] font-bold tabular-nums" style={{ color: "#10b981", ...mono }}>
+            <span className="text-[9px] font-medium" style={{ color: "#059669", ...mono }}>Execution Quality</span>
+            <span className="text-[11px] font-bold tabular-nums" style={{ color: "#059669", ...mono }}>
               {Math.round(engineer.executionQualityScore * 100)}
             </span>
           </div>
@@ -122,17 +122,17 @@ function NodeDetail({
           ].map((m) => (
             <div key={m.label} className="flex justify-between text-[8.5px] py-px" style={mono}>
               <span style={{ color: "var(--text-muted)" }}>{m.label}</span>
-              <span style={{ color: "#10b981" }}>{Math.round(m.v * 100)}</span>
+              <span style={{ color: "#059669" }}>{Math.round(m.v * 100)}</span>
             </div>
           ))}
         </div>
 
         {/* Collab + Health side by side */}
         <div className="grid grid-cols-2 gap-1.5">
-          <div className="rounded-lg p-2" style={{ background: "rgba(59,130,246,0.05)" }}>
+          <div className="rounded-lg p-2" style={{ background: "rgba(37,99,235,0.04)" }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] font-medium" style={{ color: "#3b82f6", ...mono }}>Collaboration</span>
-              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#3b82f6", ...mono }}>
+              <span className="text-[9px] font-medium" style={{ color: "#2563eb", ...mono }}>Collaboration</span>
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#2563eb", ...mono }}>
                 {Math.round(engineer.collaborationScore * 100)}
               </span>
             </div>
@@ -141,10 +141,10 @@ function NodeDetail({
               <div>{engineer.avgCommentsPerReview.toFixed(1)} avg cmts</div>
             </div>
           </div>
-          <div className="rounded-lg p-2" style={{ background: "rgba(167,139,250,0.05)" }}>
+          <div className="rounded-lg p-2" style={{ background: "rgba(124,58,237,0.04)" }}>
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[9px] font-medium" style={{ color: "#a78bfa", ...mono }}>Code Health</span>
-              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#a78bfa", ...mono }}>
+              <span className="text-[9px] font-medium" style={{ color: "#7c3aed", ...mono }}>Code Health</span>
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#7c3aed", ...mono }}>
                 {Math.round(engineer.codeHealthScore * 100)}
               </span>
             </div>
@@ -160,7 +160,7 @@ function NodeDetail({
       {(reviewsGiven.length > 0 || reviewsReceived.length > 0) && (
         <div
           className="mx-3 mb-2 rounded-md px-2 py-1.5 text-[8.5px] leading-relaxed"
-          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", ...mono }}
+          style={{ background: "rgba(0,0,0,0.02)", border: "1px solid var(--border)", ...mono }}
         >
           <span style={{ color: "var(--text-muted)" }}>
             Edge weight = review count × comment depth × reviewer{"'"}s execution score.{" "}
@@ -221,10 +221,10 @@ function EdgeTooltip({
       style={{
         left: pos.x + 14,
         top: pos.y - 10,
-        background: "rgba(9,12,20,0.96)",
+        background: "rgba(255,255,255,0.96)",
         backdropFilter: "blur(16px)",
-        border: "1px solid rgba(249,115,22,0.25)",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
         whiteSpace: "nowrap",
       }}
     >
@@ -386,7 +386,7 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
     setHoveredEdge({ edge: { source: src, target: tgt, weight: link.weight }, pos: { x, y } });
   }, []);
 
-  /* ── Canvas rendering — KEY FIX: divide by globalScale for constant screen size ── */
+  /* ── Canvas rendering — light theme ── */
   const nodeCanvasObject = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const id = node.id as string;
@@ -408,8 +408,8 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
       let alpha = 1;
       if (hasHL) {
         if (dimmed) {
-          color = "#1a1f30";
-          alpha = 0.3;
+          color = "#d1d5db";
+          alpha = 0.35;
         } else if (isSelected) {
           color = "#f97316";
         } else if (isTop5) {
@@ -420,15 +420,15 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
       } else {
         if (isTop5) color = "#f97316";
         else if ((engineerRankMap.get(id) ?? 100) <= 10) color = "#3b82f6";
-        else if ((engineerRankMap.get(id) ?? 100) <= 30) color = "#1d4ed8";
-        else color = "#1e3a5f";
+        else if ((engineerRankMap.get(id) ?? 100) <= 30) color = "#93c5fd";
+        else color = "#cbd5e1";
       }
 
       // Glow for selected node
       if (isSelected && Number.isFinite(r)) {
         const glowR = r * 3;
         const grd = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowR);
-        grd.addColorStop(0, "rgba(249,115,22,0.3)");
+        grd.addColorStop(0, "rgba(249,115,22,0.2)");
         grd.addColorStop(1, "rgba(249,115,22,0)");
         ctx.beginPath();
         ctx.arc(x, y, glowR, 0, Math.PI * 2);
@@ -447,7 +447,7 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
       if (isSelected) {
         ctx.beginPath();
         ctx.arc(x, y, r + 2 / globalScale, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(249,115,22,0.6)";
+        ctx.strokeStyle = "rgba(249,115,22,0.5)";
         ctx.lineWidth = 1.5 / globalScale;
         ctx.stroke();
       }
@@ -465,10 +465,10 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
         ctx.fillStyle = dimmed
           ? "transparent"
           : isSelected
-          ? "#f97316"
+          ? "#ea580c"
           : isTop5
-          ? "rgba(255,210,170,0.85)"
-          : "rgba(148,163,184,0.5)";
+          ? "#92400e"
+          : "#64748b";
         ctx.fillText(id, x, y + r + 2 / globalScale);
       }
     },
@@ -494,19 +494,19 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
 
       if (hasHL) {
         if (isHL) {
-          ctx.strokeStyle = "rgba(249,115,22,0.35)";
+          ctx.strokeStyle = "rgba(249,115,22,0.4)";
           ctx.lineWidth = Math.min(2, Math.max(0.3, w / 3)) / globalScale;
         } else {
-          ctx.strokeStyle = "rgba(15,20,35,0.15)";
+          ctx.strokeStyle = "rgba(203,213,225,0.2)";
           ctx.lineWidth = 0.3 / globalScale;
         }
       } else {
-        ctx.strokeStyle = "rgba(100,116,139,0.06)";
+        ctx.strokeStyle = "rgba(148,163,184,0.12)";
         ctx.lineWidth = Math.min(1, Math.max(0.1, w / 5)) / globalScale;
       }
       ctx.stroke();
 
-      // Edge labels: only top 8 heaviest highlighted edges when zoomed > 1.5x
+      // Edge labels: only top heaviest highlighted edges when zoomed > 1.5x
       if (isHL && globalScale > 1.5 && w > 0.3) {
         const midX = (src.x + tgt.x) / 2;
         const midY = (src.y + tgt.y) / 2;
@@ -517,10 +517,10 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
         const tw = ctx.measureText(label).width;
         const pad = 1.5 / globalScale;
 
-        ctx.fillStyle = "rgba(6,8,16,0.85)";
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
         ctx.fillRect(midX - tw / 2 - pad, midY - fontSize / 2 - pad, tw + pad * 2, fontSize + pad * 2);
 
-        ctx.fillStyle = "rgba(249,115,22,0.7)";
+        ctx.fillStyle = "rgba(234,88,12,0.85)";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(label, midX, midY);
@@ -552,15 +552,15 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
           {[
             { c: "var(--accent)", l: "Top 5" },
             { c: "#3b82f6", l: "Top 10" },
-            { c: "#1d4ed8", l: "Top 30" },
-            { c: "#1e3a5f", l: "Others" },
+            { c: "#93c5fd", l: "Top 30" },
+            { c: "#cbd5e1", l: "Others" },
           ].map((d) => (
             <span key={d.l} className="flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: d.c }} />
               {d.l}
             </span>
           ))}
-          <span style={{ opacity: 0.4, marginLeft: 4 }}>
+          <span style={{ opacity: 0.5, marginLeft: 4 }}>
             {graphData.nodes.length} nodes · {graphData.links.length} edges
           </span>
         </div>
@@ -571,7 +571,7 @@ export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLo
         ref={containerRef}
         className="relative flex-1"
         style={{
-          background: "radial-gradient(ellipse at 50% 40%, rgba(12,16,28,1) 0%, rgba(6,8,16,1) 70%)",
+          background: "radial-gradient(ellipse at 50% 40%, #f8fafc 0%, #f1f5f9 70%)",
         }}
       >
         {dims.w > 0 && (

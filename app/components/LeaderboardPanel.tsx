@@ -6,7 +6,7 @@ import { Engineer } from "../types";
 /* ── Score bar ─────────────────────────────────────── */
 function ScoreBar({ value, color }: { value: number; color: string }) {
   return (
-    <div className="w-full rounded-full overflow-hidden" style={{ height: 5, background: "rgba(255,255,255,0.06)" }}>
+    <div className="w-full rounded-full overflow-hidden" style={{ height: 5, background: "rgba(0,0,0,0.06)" }}>
       <div className="h-full rounded-full score-fill" style={{ width: `${Math.round(value * 100)}%`, background: color }} />
     </div>
   );
@@ -39,11 +39,11 @@ function MetricRow({ label, value, color }: { label: string; value: number; colo
 /* ── Rank badge ────────────────────────────────────── */
 function Rank({ rank }: { rank: number }) {
   const cfg: Record<number, { bg: string; fg: string; shadow?: string }> = {
-    1: { bg: "var(--accent)", fg: "#fff", shadow: "0 0 14px rgba(249,115,22,0.4)" },
-    2: { bg: "rgba(148,163,184,0.15)", fg: "#94a3b8" },
-    3: { bg: "rgba(251,191,36,0.12)", fg: "#fbbf24" },
+    1: { bg: "var(--accent)", fg: "#fff", shadow: "0 2px 8px rgba(249,115,22,0.3)" },
+    2: { bg: "#f1f5f9", fg: "#64748b" },
+    3: { bg: "#fef3c7", fg: "#d97706" },
   };
-  const c = cfg[rank] ?? { bg: "rgba(71,85,105,0.1)", fg: "#64748b" };
+  const c = cfg[rank] ?? { bg: "#f1f5f9", fg: "#94a3b8" };
   return (
     <div
       className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
@@ -137,9 +137,9 @@ function Card({
       style={{
         animationDelay: `${delay}ms`,
         borderColor: expanded
-          ? "rgba(249,115,22,0.45)"
+          ? "rgba(249,115,22,0.4)"
           : isFirst
-          ? "rgba(249,115,22,0.18)"
+          ? "rgba(249,115,22,0.2)"
           : "var(--border)",
         background: expanded
           ? "rgba(249,115,22,0.04)"
@@ -148,6 +148,7 @@ function Card({
           : "var(--bg-card)",
         padding: expanded ? "14px 16px" : "12px 14px",
         outline: "none",
+        boxShadow: expanded ? "0 4px 12px rgba(249,115,22,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",
         transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
@@ -163,14 +164,14 @@ function Card({
           style={{
             border: isFirst
               ? "2px solid rgba(249,115,22,0.4)"
-              : "1.5px solid rgba(255,255,255,0.08)",
+              : "1.5px solid rgba(0,0,0,0.08)",
             transition: "all 0.2s ease",
           }}
         />
         <div className="flex-1 min-w-0">
           <div
-            className="text-[14px] font-bold text-white truncate"
-            style={{ fontFamily: "var(--font-dm-mono)" }}
+            className="text-[14px] font-bold truncate"
+            style={{ fontFamily: "var(--font-dm-mono)", color: "var(--text-primary)" }}
           >
             {e.login}
           </div>
@@ -203,9 +204,9 @@ function Card({
 
       {/* ── Row 2: Pillar summary (always visible) ──── */}
       <div className="flex items-center gap-4 mt-2.5 pl-10">
-        <PillarBadge label="Execution" score={e.executionQualityScore} color="#10b981" />
-        <PillarBadge label="Collab" score={e.collaborationScore} color="#3b82f6" />
-        <PillarBadge label="Health" score={e.codeHealthScore} color="#a78bfa" />
+        <PillarBadge label="Execution" score={e.executionQualityScore} color="#059669" />
+        <PillarBadge label="Collab" score={e.collaborationScore} color="#2563eb" />
+        <PillarBadge label="Health" score={e.codeHealthScore} color="#7c3aed" />
       </div>
 
       {/* ── Expanded: Full breakdown ───────────────── */}
@@ -213,7 +214,7 @@ function Card({
         <div
           className="mt-3 pt-3 flex flex-col gap-2"
           style={{
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border)",
             animation: "expandIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
           }}
         >
@@ -221,21 +222,21 @@ function Card({
           <div
             className="rounded-lg px-3 py-2 text-[11px]"
             style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.05)",
+              background: "rgba(0,0,0,0.02)",
+              border: "1px solid var(--border)",
               fontFamily: "var(--font-dm-mono)",
               lineHeight: 1.6,
             }}
           >
-            <span style={{ color: "#10b981" }}>Exec {Math.round(e.executionQualityScore * 100)}</span>
+            <span style={{ color: "#059669" }}>Exec {Math.round(e.executionQualityScore * 100)}</span>
             <span style={{ color: "var(--text-muted)" }}> × 40% </span>
-            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>+</span>
-            <span style={{ color: "#3b82f6" }}> Collab {Math.round(e.collaborationScore * 100)}</span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.5 }}>+</span>
+            <span style={{ color: "#2563eb" }}> Collab {Math.round(e.collaborationScore * 100)}</span>
             <span style={{ color: "var(--text-muted)" }}> × 30% </span>
-            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>+</span>
-            <span style={{ color: "#a78bfa" }}> Health {Math.round(e.codeHealthScore * 100)}</span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.5 }}>+</span>
+            <span style={{ color: "#7c3aed" }}> Health {Math.round(e.codeHealthScore * 100)}</span>
             <span style={{ color: "var(--text-muted)" }}> × 30% </span>
-            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>=</span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.5 }}>=</span>
             <span className="font-bold" style={{ color: "var(--accent)" }}> {(e.impactScore * 100).toFixed(1)}</span>
           </div>
 
@@ -244,22 +245,22 @@ function Card({
             title="Execution Quality"
             weight="40%"
             score={e.executionQualityScore}
-            color="#10b981"
-            bgColor="rgba(16,185,129,0.04)"
+            color="#059669"
+            bgColor="rgba(5,150,105,0.05)"
           >
-            <MetricRow label="Merge pace" value={eq.mergeCadence} color="#10b981" />
-            <MetricRow label="Lead time" value={eq.leadTime} color="#06b6d4" />
-            <MetricRow label="Failure rate" value={eq.changeFailureRate} color="#8b5cf6" />
-            <MetricRow label="Recency" value={eq.recencyScore} color="#f59e0b" />
-            <MetricRow label="PR complexity" value={eq.prEffortScore} color="#ec4899" />
+            <MetricRow label="Merge pace" value={eq.mergeCadence} color="#059669" />
+            <MetricRow label="Lead time" value={eq.leadTime} color="#0891b2" />
+            <MetricRow label="Failure rate" value={eq.changeFailureRate} color="#7c3aed" />
+            <MetricRow label="Recency" value={eq.recencyScore} color="#d97706" />
+            <MetricRow label="PR complexity" value={eq.prEffortScore} color="#db2777" />
           </PillarSection>
 
           <PillarSection
             title="Collaboration"
             weight="30%"
             score={e.collaborationScore}
-            color="#3b82f6"
-            bgColor="rgba(59,130,246,0.04)"
+            color="#2563eb"
+            bgColor="rgba(37,99,235,0.04)"
           >
             <div
               className="flex flex-col gap-1 text-[10px]"
@@ -267,13 +268,13 @@ function Card({
             >
               <span>
                 Review network rank (PageRank):{" "}
-                <span className="font-semibold" style={{ color: "#3b82f6" }}>{Math.round(e.collaborationScore * 100)}</span>
+                <span className="font-semibold" style={{ color: "#2563eb" }}>{Math.round(e.collaborationScore * 100)}</span>
                 <span style={{ color: "var(--text-muted)" }}> / 100</span>
               </span>
               <span style={{ color: "var(--text-muted)" }}>
                 {e.reviewsGiven} reviews given · {e.avgCommentsPerReview.toFixed(1)} avg comments per review
               </span>
-              <span className="text-[9px]" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
+              <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>
                 Engineers who review more code from stronger peers rank higher
               </span>
             </div>
@@ -283,8 +284,8 @@ function Card({
             title="Code Health"
             weight="30%"
             score={e.codeHealthScore}
-            color="#a78bfa"
-            bgColor="rgba(167,139,250,0.04)"
+            color="#7c3aed"
+            bgColor="rgba(124,58,237,0.04)"
           >
             <div
               className="flex flex-col gap-1 text-[10px]"
@@ -292,12 +293,12 @@ function Card({
             >
               <span>
                 Code churn:{" "}
-                <span className="font-semibold" style={{ color: "#a78bfa" }}>{(e.churnRate * 100).toFixed(0)}%</span>
+                <span className="font-semibold" style={{ color: "#7c3aed" }}>{(e.churnRate * 100).toFixed(0)}%</span>
                 <span style={{ color: "var(--text-muted)" }}> — lower means more consistent PR scope</span>
               </span>
               <span>
                 Merge reliability:{" "}
-                <span className="font-semibold" style={{ color: "#a78bfa" }}>{(e.mergeReliability * 100).toFixed(0)}%</span>
+                <span className="font-semibold" style={{ color: "#7c3aed" }}>{(e.mergeReliability * 100).toFixed(0)}%</span>
                 <span style={{ color: "var(--text-muted)" }}> of PRs successfully shipped</span>
               </span>
             </div>
@@ -308,7 +309,7 @@ function Card({
             className="text-[10px] leading-relaxed pt-2 line-clamp-3"
             style={{
               color: "var(--text-secondary)",
-              borderTop: "1px solid rgba(255,255,255,0.04)",
+              borderTop: "1px solid var(--border)",
               fontFamily: "var(--font-dm-mono)",
             }}
           >

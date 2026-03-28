@@ -6,25 +6,25 @@
 }
 
 :root {
-  --bg: #060810;
-  --bg-card: #0c0f18;
-  --bg-card-hover: #10141f;
-  --bg-panel: #090c14;
-  --bg-surface: #0e1219;
-  --border: rgba(255, 255, 255, 0.05);
-  --border-strong: rgba(255, 255, 255, 0.1);
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f5f5f5;
+  --bg-panel: #ffffff;
+  --bg-surface: #f0f0f0;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
   --accent: #f97316;
-  --accent-dim: rgba(249, 115, 22, 0.12);
-  --accent-glow: rgba(249, 115, 22, 0.3);
+  --accent-dim: rgba(249, 115, 22, 0.08);
+  --accent-glow: rgba(249, 115, 22, 0.2);
   --blue: #3b82f6;
-  --blue-dim: rgba(59, 130, 246, 0.12);
+  --blue-dim: rgba(59, 130, 246, 0.08);
   --green: #10b981;
-  --green-dim: rgba(16, 185, 129, 0.12);
+  --green-dim: rgba(16, 185, 129, 0.08);
   --violet: #a78bfa;
-  --violet-dim: rgba(167, 139, 250, 0.12);
-  --text-primary: #e8ecf2;
-  --text-secondary: #8b95a8;
-  --text-muted: #4a5568;
+  --violet-dim: rgba(167, 139, 250, 0.08);
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
 }
 
 * {
@@ -46,18 +46,18 @@ body {
 
 /* ── Scrollbar ─────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* ── Score bar fill ────────────────────────────── */
@@ -72,8 +72,9 @@ body {
 }
 .engineer-card:hover {
   background: var(--bg-card-hover) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: #d1d5db !important;
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 .engineer-card:active {
   transform: translateY(0);
@@ -143,16 +144,4 @@ body {
 }
 .detail-slide-in {
   animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* ── Noise texture overlay ─────────────────────── */
-.noise-overlay::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.015;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 256px;
-  z-index: 9999;
 }

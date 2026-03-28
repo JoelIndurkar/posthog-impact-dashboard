@@ -26,7 +26,7 @@ export default function Header({ metadata }: Props) {
     <header className="flex-none" style={{ borderBottom: "1px solid var(--border)" }}>
       <div
         className="flex items-center justify-between px-6 py-3"
-        style={{ background: "rgba(6,8,16,0.98)" }}
+        style={{ background: "var(--bg-panel)" }}
       >
         {/* Left: wordmark */}
         <div className="flex items-center gap-3 shrink-0">
@@ -36,12 +36,12 @@ export default function Header({ metadata }: Props) {
             width={28}
             height={28}
             className="rounded-md shrink-0"
-            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+            style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}
           />
           <div className="shrink-0">
             <h1
-              className="text-[14px] font-medium text-white whitespace-nowrap"
-              style={{ fontFamily: "var(--font-dm-mono)", letterSpacing: "-0.01em" }}
+              className="text-[14px] font-medium whitespace-nowrap"
+              style={{ fontFamily: "var(--font-dm-mono)", letterSpacing: "-0.01em", color: "var(--text-primary)" }}
             >
               PostHog Engineering Impact Dashboard
             </h1>
@@ -66,7 +66,7 @@ export default function Header({ metadata }: Props) {
           ].map((s) => (
             <span key={s.label} className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
-              <span className="text-white font-medium">{s.value}</span> {s.label}
+              <span className="font-medium" style={{ color: "var(--text-primary)" }}>{s.value}</span> {s.label}
             </span>
           ))}
         </div>
@@ -96,7 +96,7 @@ export default function Header({ metadata }: Props) {
       {/* Methodology panel */}
       <div
         className={`methodology-panel ${open ? "open" : "closed"}`}
-        style={{ background: "rgba(249,115,22,0.02)", borderTop: open ? "1px solid var(--border)" : "none" }}
+        style={{ background: "rgba(249,115,22,0.03)", borderTop: open ? "1px solid var(--border)" : "none" }}
       >
         <div
           className="px-6 py-3 max-w-7xl"
@@ -104,7 +104,7 @@ export default function Header({ metadata }: Props) {
         >
           {/* Definition */}
           <p className="text-[11px] leading-relaxed mb-3" style={{ color: "var(--text-secondary)" }}>
-            <span className="font-semibold text-white">Impact</span> = an engineer{"'"}s ability to
+            <span className="font-semibold" style={{ color: "var(--text-primary)" }}>Impact</span> = an engineer{"'"}s ability to
             ship reliable code, elevate teammates through reviews, and maintain a healthy codebase.
             We measure what matters for sustained engineering output, not just volume.
           </p>
@@ -113,21 +113,21 @@ export default function Header({ metadata }: Props) {
           <div className="flex gap-6">
             {[
               {
-                color: "#10b981",
+                color: "#059669",
                 title: "Execution Quality",
                 weight: "40%",
                 why: "Can they ship reliably?",
                 body: "Merge pace, lead time, revert rate, recency, and PR complexity (files touched × log of lines changed).",
               },
               {
-                color: "#3b82f6",
+                color: "#2563eb",
                 title: "Collaboration",
                 weight: "30%",
                 why: "Do they make others better?",
                 body: "PageRank on the review graph — deeper reviews from stronger engineers carry more weight.",
               },
               {
-                color: "#a78bfa",
+                color: "#7c3aed",
                 title: "Code Health",
                 weight: "30%",
                 why: "Are they building forward?",
