@@ -2,7 +2,7 @@
 
 An interactive dashboard that answers: **who are the most impactful engineers at PostHog, and why?** Built on 90 days of GitHub data from the PostHog/posthog repository, it scores 115 engineers across three pillars: execution quality, collaboration depth, and code health.
 
-Live demo: [Deployed on Vercel]
+**Deployed Live**: [posthog-impact-dashboard-eosin.vercel.app](https://posthog-impact-dashboard-eosin.vercel.app/)
 
 ## How to Run Locally
 
