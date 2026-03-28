@@ -1,496 +1,372 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import Image from "next/image";
-import { ChevronUp, ChevronDown } from "lucide-react";
 import { Engineer } from "../types";
 
-// ── Score bar ──────────────────────────────────────────────────
-function ScoreBar({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  const pct = Math.round(value * 100);
+/* ── Score bar ─────────────────────────────────────── */
+function ScoreBar({ value, color }: { value: number; color: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="w-full rounded-full overflow-hidden" style={{ height: 5, background: "rgba(255,255,255,0.06)" }}>
+      <div className="h-full rounded-full score-fill" style={{ width: `${Math.round(value * 100)}%`, background: color }} />
+    </div>
+  );
+}
+
+/* ── Metric row ────────────────────────────────────── */
+function MetricRow({ label, value, color }: { label: string; value: number; color: string }) {
+  const score = Math.round(value * 100);
+  return (
+    <div className="flex items-center gap-2 py-[3px]">
       <span
-        className="w-14 text-[9px] uppercase tracking-wider shrink-0"
-        style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
+        className="w-[90px] shrink-0 text-[10px]"
+        style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
       >
         {label}
       </span>
-      <div
-        className="flex-1 rounded-full overflow-hidden"
-        style={{ height: "3px", background: "rgba(255,255,255,0.06)" }}
-      >
-        <div
-          className="h-full rounded-full score-fill"
-          style={{ width: `${pct}%`, background: color }}
-        />
+      <div className="flex-1">
+        <ScoreBar value={value} color={color} />
       </div>
       <span
-        className="w-6 text-right text-[10px]"
-        style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
+        className="w-[26px] text-right text-[11px] font-semibold tabular-nums shrink-0"
+        style={{ color, fontFamily: "var(--font-dm-mono)" }}
       >
-        {pct}
+        {score}
       </span>
     </div>
   );
 }
 
-// ── Sparkline ─────────────────────────────────────────────────
-function Sparkline({ data }: { data: { week: string; prCount: number }[] }) {
-  const max = Math.max(...data.map((d) => d.prCount), 1);
-  const W = 56;
-  const H = 18;
-  const step = W / (data.length - 1);
-
-  const points = data
-    .map((d, i) => `${i * step},${H - (d.prCount / max) * H}`)
-    .join(" ");
-
-  const area =
-    `M 0,${H} ` +
-    data
-      .map((d, i) => `L ${i * step},${H - (d.prCount / max) * H}`)
-      .join(" ") +
-    ` L ${W},${H} Z`;
-
-  return (
-    <svg width={W} height={H} style={{ overflow: "visible", flexShrink: 0 }}>
-      <defs>
-        <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#sparkGrad)" />
-      <polyline
-        points={points}
-        fill="none"
-        stroke="var(--accent)"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        opacity={0.7}
-      />
-    </svg>
-  );
-}
-
-// ── Rank badge ─────────────────────────────────────────────────
-function RankBadge({ rank }: { rank: number }) {
-  const styles: Record<number, { bg: string; color: string; shadow?: string }> =
-    {
-      1: {
-        bg: "var(--accent)",
-        color: "#fff",
-        shadow: "0 0 12px rgba(249,115,22,0.5)",
-      },
-      2: { bg: "rgba(148,163,184,0.15)", color: "#94a3b8" },
-      3: { bg: "rgba(251,191,36,0.15)", color: "#fbbf24" },
-      4: { bg: "rgba(71,85,105,0.2)", color: "#64748b" },
-      5: { bg: "rgba(71,85,105,0.2)", color: "#64748b" },
-    };
-  const s = styles[rank];
+/* ── Rank badge ────────────────────────────────────── */
+function Rank({ rank }: { rank: number }) {
+  const cfg: Record<number, { bg: string; fg: string; shadow?: string }> = {
+    1: { bg: "var(--accent)", fg: "#fff", shadow: "0 0 14px rgba(249,115,22,0.4)" },
+    2: { bg: "rgba(148,163,184,0.15)", fg: "#94a3b8" },
+    3: { bg: "rgba(251,191,36,0.12)", fg: "#fbbf24" },
+  };
+  const c = cfg[rank] ?? { bg: "rgba(71,85,105,0.1)", fg: "#64748b" };
   return (
     <div
-      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-      style={{
-        background: s.bg,
-        color: s.color,
-        boxShadow: s.shadow,
-        fontFamily: "var(--font-dm-mono)",
-      }}
+      className="w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0"
+      style={{ background: c.bg, color: c.fg, boxShadow: c.shadow, fontFamily: "var(--font-dm-mono)" }}
     >
       {rank}
     </div>
   );
 }
 
-// ── Engineer card (top 5) ──────────────────────────────────────
-function EngineerCard({
-  engineer,
+/* ── Pillar badge — compact for collapsed state ────── */
+function PillarBadge({ label, score, color }: { label: string; score: number; color: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: color }} />
+      <span className="text-[10px]" style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}>
+        {label}
+      </span>
+      <span
+        className="text-[11px] font-bold tabular-nums"
+        style={{ color, fontFamily: "var(--font-dm-mono)" }}
+      >
+        {Math.round(score * 100)}
+      </span>
+    </div>
+  );
+}
+
+/* ── Pillar section — expanded detail ──────────────── */
+function PillarSection({
+  title,
+  weight,
+  score,
+  color,
+  bgColor,
+  children,
+}: {
+  title: string;
+  weight: string;
+  score: number;
+  color: string;
+  bgColor: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg p-2.5" style={{ background: bgColor }}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+          <span className="text-[11px] font-medium" style={{ color: "var(--text-secondary)" }}>
+            {title}
+          </span>
+          <span className="text-[9px]" style={{ color: "var(--text-muted)" }}>
+            {weight}
+          </span>
+        </div>
+        <span
+          className="text-[14px] font-bold tabular-nums"
+          style={{ color, fontFamily: "var(--font-dm-mono)" }}
+        >
+          {Math.round(score * 100)}
+        </span>
+      </div>
+      <ScoreBar value={score} color={color} />
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
+/* ── Engineer card ──────────────────────────────────── */
+function Card({
+  engineer: e,
   rank,
-  selected,
+  expanded,
   onClick,
+  delay,
 }: {
   engineer: Engineer;
   rank: number;
-  selected: boolean;
+  expanded: boolean;
   onClick: () => void;
+  delay: number;
 }) {
-  const borderColor =
-    rank === 1
-      ? "rgba(249,115,22,0.4)"
-      : rank === 2
-      ? "rgba(148,163,184,0.15)"
-      : rank === 3
-      ? "rgba(251,191,36,0.2)"
-      : "rgba(255,255,255,0.05)";
+  const isFirst = rank === 1;
+  const eq = e.executionQuality;
 
   return (
     <button
       onClick={onClick}
-      className="engineer-card w-full text-left rounded-lg p-3 border"
+      className="engineer-card card-animate w-full text-left rounded-xl border"
       style={{
-        borderColor: selected ? "rgba(249,115,22,0.5)" : borderColor,
-        background: selected
-          ? "rgba(249,115,22,0.06)"
-          : rank === 1
+        animationDelay: `${delay}ms`,
+        borderColor: expanded
+          ? "rgba(249,115,22,0.45)"
+          : isFirst
+          ? "rgba(249,115,22,0.18)"
+          : "var(--border)",
+        background: expanded
           ? "rgba(249,115,22,0.04)"
+          : isFirst
+          ? "rgba(249,115,22,0.02)"
           : "var(--bg-card)",
+        padding: expanded ? "14px 16px" : "12px 14px",
         outline: "none",
+        transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Top row: rank + avatar + name + sparkline + impact */}
-      <div className="flex items-center gap-2.5 mb-2">
-        <RankBadge rank={rank} />
+      {/* ── Row 1: Identity + Impact Score ──────────── */}
+      <div className="flex items-center gap-3">
+        <Rank rank={rank} />
         <Image
-          src={engineer.avatar_url}
-          alt={engineer.login}
-          width={28}
-          height={28}
-          className="rounded-full"
-          style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+          src={e.avatar_url}
+          alt={e.login}
+          width={expanded ? 36 : 32}
+          height={expanded ? 36 : 32}
+          className="rounded-full shrink-0"
+          style={{
+            border: isFirst
+              ? "2px solid rgba(249,115,22,0.4)"
+              : "1.5px solid rgba(255,255,255,0.08)",
+            transition: "all 0.2s ease",
+          }}
         />
         <div className="flex-1 min-w-0">
           <div
-            className="text-sm font-semibold text-white leading-none truncate"
-            style={{ fontFamily: "var(--font-syne)" }}
+            className="text-[14px] font-bold text-white truncate"
+            style={{ fontFamily: "var(--font-dm-mono)" }}
           >
-            {engineer.login}
+            {e.login}
           </div>
           <div
-            className="text-[10px] mt-0.5 truncate"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
+            className="text-[11px] mt-0.5"
+            style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
           >
-            {engineer.prsMerged} PRs · {engineer.reviewsGiven} reviews given
+            {e.prsMerged} PRs merged · {e.reviewsGiven} reviews
           </div>
         </div>
-        <Sparkline data={engineer.weeklyActivity} />
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 pl-2">
           <div
-            className="text-base font-bold leading-none"
+            className="text-2xl font-bold tabular-nums"
             style={{
-              color: rank === 1 ? "var(--accent)" : "var(--text-primary)",
+              color: isFirst ? "var(--accent)" : "var(--text-primary)",
               fontFamily: "var(--font-dm-mono)",
+              lineHeight: 1,
             }}
           >
-            {(engineer.impactScore * 100).toFixed(1)}
+            {(e.impactScore * 100).toFixed(1)}
           </div>
           <div
-            className="text-[9px] uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
+            className="text-[9px] uppercase tracking-widest mt-1"
+            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
           >
             impact
           </div>
         </div>
       </div>
 
-      {/* Summary */}
-      {engineer.summary && (
-        <p
-          className="text-[10px] leading-relaxed mb-2 line-clamp-1"
+      {/* ── Row 2: Pillar summary (always visible) ──── */}
+      <div className="flex items-center gap-4 mt-2.5 pl-10">
+        <PillarBadge label="Execution" score={e.executionQualityScore} color="#10b981" />
+        <PillarBadge label="Collab" score={e.collaborationScore} color="#3b82f6" />
+        <PillarBadge label="Health" score={e.codeHealthScore} color="#a78bfa" />
+      </div>
+
+      {/* ── Expanded: Full breakdown ───────────────── */}
+      {expanded && (
+        <div
+          className="mt-3 pt-3 flex flex-col gap-2"
           style={{
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-dm-mono)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            animation: "expandIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both",
           }}
         >
-          {engineer.summary}
-        </p>
-      )}
+          {/* Formula */}
+          <div
+            className="rounded-lg px-3 py-2 text-[11px]"
+            style={{
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              fontFamily: "var(--font-dm-mono)",
+              lineHeight: 1.6,
+            }}
+          >
+            <span style={{ color: "#10b981" }}>Exec {Math.round(e.executionQualityScore * 100)}</span>
+            <span style={{ color: "var(--text-muted)" }}> × 40% </span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>+</span>
+            <span style={{ color: "#3b82f6" }}> Collab {Math.round(e.collaborationScore * 100)}</span>
+            <span style={{ color: "var(--text-muted)" }}> × 30% </span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>+</span>
+            <span style={{ color: "#a78bfa" }}> Health {Math.round(e.codeHealthScore * 100)}</span>
+            <span style={{ color: "var(--text-muted)" }}> × 30% </span>
+            <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>=</span>
+            <span className="font-bold" style={{ color: "var(--accent)" }}> {(e.impactScore * 100).toFixed(1)}</span>
+          </div>
 
-      {/* Score bars */}
-      <div className="flex flex-col gap-1">
-        <ScoreBar label="DORA" value={engineer.doraScore} color="var(--green)" />
-        <ScoreBar
-          label="PageRank"
-          value={engineer.pageRankScore}
-          color="var(--blue)"
-        />
-        <ScoreBar
-          label="Impact"
-          value={engineer.impactScore}
-          color="var(--accent)"
-        />
-      </div>
+          {/* Three pillars */}
+          <PillarSection
+            title="Execution Quality"
+            weight="40%"
+            score={e.executionQualityScore}
+            color="#10b981"
+            bgColor="rgba(16,185,129,0.04)"
+          >
+            <MetricRow label="Merge pace" value={eq.mergeCadence} color="#10b981" />
+            <MetricRow label="Lead time" value={eq.leadTime} color="#06b6d4" />
+            <MetricRow label="Failure rate" value={eq.changeFailureRate} color="#8b5cf6" />
+            <MetricRow label="Recency" value={eq.recencyScore} color="#f59e0b" />
+            <MetricRow label="PR complexity" value={eq.prEffortScore} color="#ec4899" />
+          </PillarSection>
+
+          <PillarSection
+            title="Collaboration"
+            weight="30%"
+            score={e.collaborationScore}
+            color="#3b82f6"
+            bgColor="rgba(59,130,246,0.04)"
+          >
+            <div
+              className="flex flex-col gap-1 text-[10px]"
+              style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
+            >
+              <span>
+                Review network rank (PageRank):{" "}
+                <span className="font-semibold" style={{ color: "#3b82f6" }}>{Math.round(e.collaborationScore * 100)}</span>
+                <span style={{ color: "var(--text-muted)" }}> / 100</span>
+              </span>
+              <span style={{ color: "var(--text-muted)" }}>
+                {e.reviewsGiven} reviews given · {e.avgCommentsPerReview.toFixed(1)} avg comments per review
+              </span>
+              <span className="text-[9px]" style={{ color: "var(--text-muted)", opacity: 0.7 }}>
+                Engineers who review more code from stronger peers rank higher
+              </span>
+            </div>
+          </PillarSection>
+
+          <PillarSection
+            title="Code Health"
+            weight="30%"
+            score={e.codeHealthScore}
+            color="#a78bfa"
+            bgColor="rgba(167,139,250,0.04)"
+          >
+            <div
+              className="flex flex-col gap-1 text-[10px]"
+              style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
+            >
+              <span>
+                Code churn:{" "}
+                <span className="font-semibold" style={{ color: "#a78bfa" }}>{(e.churnRate * 100).toFixed(0)}%</span>
+                <span style={{ color: "var(--text-muted)" }}> — lower means more consistent PR scope</span>
+              </span>
+              <span>
+                Merge reliability:{" "}
+                <span className="font-semibold" style={{ color: "#a78bfa" }}>{(e.mergeReliability * 100).toFixed(0)}%</span>
+                <span style={{ color: "var(--text-muted)" }}> of PRs successfully shipped</span>
+              </span>
+            </div>
+          </PillarSection>
+
+          {/* Summary */}
+          <p
+            className="text-[10px] leading-relaxed pt-2 line-clamp-3"
+            style={{
+              color: "var(--text-secondary)",
+              borderTop: "1px solid rgba(255,255,255,0.04)",
+              fontFamily: "var(--font-dm-mono)",
+            }}
+          >
+            {e.summary}
+          </p>
+        </div>
+      )}
     </button>
   );
 }
 
-// ── Sort types ─────────────────────────────────────────────────
-type SortKey = "rank" | "impactScore" | "doraScore" | "pageRankScore" | "prsAuthored";
-type SortDir = "asc" | "desc";
-
-// ── Main panel ─────────────────────────────────────────────────
+/* ── Panel ──────────────────────────────────────────── */
 interface Props {
   engineers: Engineer[];
   selectedLogin: string | null;
   onSelectLogin: (login: string | null) => void;
 }
 
-export default function LeaderboardPanel({
-  engineers,
-  selectedLogin,
-  onSelectLogin,
-}: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>("impactScore");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-
+export default function LeaderboardPanel({ engineers, selectedLogin, onSelectLogin }: Props) {
   const top5 = engineers.slice(0, 5);
-
-  const sortedAll = useMemo(() => {
-    const ranked = engineers.map((e, i) => ({ ...e, rank: i + 1 }));
-    return [...ranked].sort((a, b) => {
-      let av: number, bv: number;
-      if (sortKey === "rank") {
-        av = a.rank;
-        bv = b.rank;
-      } else if (sortKey === "prsAuthored") {
-        av = a.prsAuthored;
-        bv = b.prsAuthored;
-      } else {
-        av = a[sortKey];
-        bv = b[sortKey];
-      }
-      return sortDir === "desc" ? bv - av : av - bv;
-    });
-  }, [engineers, sortKey, sortDir]);
-
-  function handleSort(key: SortKey) {
-    if (key === sortKey) {
-      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  }
-
-  function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col)
-      return (
-        <span style={{ color: "var(--text-muted)", opacity: 0.4 }}>
-          <ChevronDown size={10} />
-        </span>
-      );
-    return sortDir === "desc" ? (
-      <ChevronDown size={10} style={{ color: "var(--accent)" }} />
-    ) : (
-      <ChevronUp size={10} style={{ color: "var(--accent)" }} />
-    );
-  }
-
-  const colBtn =
-    "flex items-center gap-0.5 hover:text-white transition-colors cursor-pointer select-none";
 
   return (
     <div
-      className="flex flex-col border-r"
+      className="flex flex-col overflow-hidden"
       style={{
-        width: "460px",
+        width: 500,
         flexShrink: 0,
-        borderColor: "var(--border)",
+        borderRight: "1px solid var(--border)",
         background: "var(--bg-panel)",
       }}
     >
-      {/* ── Top 5 section ─────────────────────────────── */}
-      <div
-        className="flex-none px-3 pt-3 pb-1"
-        style={{ borderBottom: "1px solid var(--border)" }}
-      >
-        <div className="flex items-center justify-between mb-2.5 px-0.5">
-          <span
-            className="text-[10px] uppercase tracking-widest font-semibold"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
-          >
-            Top Performers
-          </span>
-          <span
-            className="text-[10px]"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
-          >
-            by impact score
-          </span>
+      <div className="flex-none px-4 pt-3 pb-2">
+        <div
+          className="text-[11px] uppercase tracking-[0.1em] font-semibold"
+          style={{ color: "var(--text-secondary)", fontFamily: "var(--font-dm-mono)" }}
+        >
+          Top 5 Engineers by Impact
         </div>
-        <div className="flex flex-col gap-1.5">
+        <p
+          className="text-[10px] mt-1"
+          style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
+        >
+          Click a card to see the full scoring breakdown
+        </p>
+      </div>
+
+      <div className="flex-1 px-3 pb-3 overflow-y-auto">
+        <div className="flex flex-col gap-2.5">
           {top5.map((eng, i) => (
-            <EngineerCard
+            <Card
               key={eng.login}
               engineer={eng}
               rank={i + 1}
-              selected={selectedLogin === eng.login}
-              onClick={() =>
-                onSelectLogin(selectedLogin === eng.login ? null : eng.login)
-              }
+              delay={i * 80}
+              expanded={selectedLogin === eng.login}
+              onClick={() => onSelectLogin(selectedLogin === eng.login ? null : eng.login)}
             />
           ))}
-        </div>
-      </div>
-
-      {/* ── Full table section ─────────────────────────── */}
-      <div className="flex flex-col flex-1 min-h-0">
-        <div
-          className="flex-none px-3 py-2 flex items-center justify-between"
-          style={{ borderBottom: "1px solid var(--border)" }}
-        >
-          <span
-            className="text-[10px] uppercase tracking-widest font-semibold"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
-          >
-            All Engineers
-          </span>
-          <span
-            className="text-[10px]"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
-          >
-            {engineers.length} total
-          </span>
-        </div>
-
-        {/* Table header */}
-        <div
-          className="flex-none grid px-3 py-1.5 text-[10px] uppercase tracking-wider"
-          style={{
-            gridTemplateColumns: "28px 1fr 52px 52px 56px 36px",
-            color: "var(--text-muted)",
-            fontFamily: "var(--font-dm-mono)",
-            borderBottom: "1px solid var(--border)",
-            background: "rgba(0,0,0,0.3)",
-          }}
-        >
-          <button className={colBtn} onClick={() => handleSort("rank")}>
-            # <SortIcon col="rank" />
-          </button>
-          <span>Engineer</span>
-          <button className={colBtn} onClick={() => handleSort("impactScore")}>
-            Impact <SortIcon col="impactScore" />
-          </button>
-          <button className={colBtn} onClick={() => handleSort("doraScore")}>
-            DORA <SortIcon col="doraScore" />
-          </button>
-          <button className={colBtn} onClick={() => handleSort("pageRankScore")}>
-            PRank <SortIcon col="pageRankScore" />
-          </button>
-          <button className={colBtn} onClick={() => handleSort("prsAuthored")}>
-            PRs <SortIcon col="prsAuthored" />
-          </button>
-        </div>
-
-        {/* Table body — scrollable */}
-        <div className="flex-1 overflow-y-auto">
-          {sortedAll.map((eng) => {
-            const isSelected = selectedLogin === eng.login;
-            const isTop5 = eng.rank <= 5;
-            return (
-              <button
-                key={eng.login}
-                onClick={() =>
-                  onSelectLogin(isSelected ? null : eng.login)
-                }
-                className={`table-row w-full text-left grid px-3 py-1.5 items-center ${
-                  isSelected ? "selected" : ""
-                }`}
-                style={{
-                  gridTemplateColumns: "28px 1fr 52px 52px 56px 36px",
-                  borderBottom: "1px solid var(--border)",
-                  outline: "none",
-                }}
-              >
-                {/* Rank */}
-                <span
-                  className="text-[11px] font-medium"
-                  style={{
-                    color: isTop5 ? "var(--accent)" : "var(--text-muted)",
-                    fontFamily: "var(--font-dm-mono)",
-                  }}
-                >
-                  {eng.rank}
-                </span>
-
-                {/* Name */}
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Image
-                    src={eng.avatar_url}
-                    alt={eng.login}
-                    width={18}
-                    height={18}
-                    className="rounded-full shrink-0"
-                    style={{ opacity: 0.85 }}
-                  />
-                  <span
-                    className="text-[11px] truncate"
-                    style={{
-                      color: isSelected ? "var(--accent)" : "var(--text-primary)",
-                      fontFamily: "var(--font-syne)",
-                      fontWeight: isTop5 ? 600 : 400,
-                    }}
-                  >
-                    {eng.login}
-                  </span>
-                </div>
-
-                {/* Impact */}
-                <div className="flex items-center gap-1">
-                  <div
-                    className="h-1 rounded-full"
-                    style={{
-                      width: `${Math.round(eng.impactScore * 32)}px`,
-                      background: "var(--accent)",
-                      opacity: 0.7,
-                    }}
-                  />
-                  <span
-                    className="text-[10px] w-6 text-right"
-                    style={{
-                      color: "var(--text-secondary)",
-                      fontFamily: "var(--font-dm-mono)",
-                    }}
-                  >
-                    {(eng.impactScore * 100).toFixed(0)}
-                  </span>
-                </div>
-
-                {/* DORA */}
-                <span
-                  className="text-[10px] text-right"
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontFamily: "var(--font-dm-mono)",
-                  }}
-                >
-                  {(eng.doraScore * 100).toFixed(0)}
-                </span>
-
-                {/* PageRank */}
-                <span
-                  className="text-[10px] text-right"
-                  style={{
-                    color: "var(--text-secondary)",
-                    fontFamily: "var(--font-dm-mono)",
-                  }}
-                >
-                  {(eng.pageRankScore * 100).toFixed(0)}
-                </span>
-
-                {/* PRs */}
-                <span
-                  className="text-[10px] text-right"
-                  style={{
-                    color: "var(--text-muted)",
-                    fontFamily: "var(--font-dm-mono)",
-                  }}
-                >
-                  {eng.prsAuthored}
-                </span>
-              </button>
-            );
-          })}
         </div>
       </div>
     </div>

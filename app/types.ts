@@ -3,6 +3,14 @@ export interface WeeklyActivity {
   prCount: number;
 }
 
+export interface ExecutionQualityMetrics {
+  mergeCadence: number;
+  leadTime: number;
+  changeFailureRate: number;
+  recencyScore: number;
+  prEffortScore: number;
+}
+
 export interface DoraMetrics {
   mergeFrequency: number;
   leadTime: number;
@@ -13,16 +21,32 @@ export interface DoraMetrics {
 export interface Engineer {
   login: string;
   avatar_url: string;
-  dora: DoraMetrics;
-  doraScore: number;
+  // Pillar 1: Execution Quality
+  executionQuality: ExecutionQualityMetrics;
+  executionQualityScore: number;
+  // Pillar 2: Collaboration
+  collaborationScore: number;
   pageRankScore: number;
+  // Pillar 3: Code Health
+  churnRate: number;
+  churnScore: number;
+  mergeReliability: number;
+  codeHealthScore: number;
+  // Final
   impactScore: number;
+  // Display metrics
+  prEffortScore: number;
+  avgCommentsPerReview: number;
+  // Activity
   summary: string;
   reviewsGiven: number;
   reviewsReceived: number;
   prsAuthored: number;
   prsMerged: number;
   weeklyActivity: WeeklyActivity[];
+  // Legacy compat for graph panel
+  doraScore: number;
+  dora: DoraMetrics;
 }
 
 export interface GraphNode {

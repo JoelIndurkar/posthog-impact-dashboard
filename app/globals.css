@@ -6,24 +6,25 @@
 }
 
 :root {
-  --bg: #07090f;
-  --bg-card: #0d1117;
-  --bg-card-hover: #111827;
-  --bg-panel: #0a0d14;
-  --border: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.12);
+  --bg: #060810;
+  --bg-card: #0c0f18;
+  --bg-card-hover: #10141f;
+  --bg-panel: #090c14;
+  --bg-surface: #0e1219;
+  --border: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.1);
   --accent: #f97316;
-  --accent-dim: rgba(249, 115, 22, 0.15);
-  --accent-glow: rgba(249, 115, 22, 0.35);
+  --accent-dim: rgba(249, 115, 22, 0.12);
+  --accent-glow: rgba(249, 115, 22, 0.3);
   --blue: #3b82f6;
-  --blue-dim: rgba(59, 130, 246, 0.15);
+  --blue-dim: rgba(59, 130, 246, 0.12);
   --green: #10b981;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --rank-1: #f97316;
-  --rank-2: #94a3b8;
-  --rank-3: #fbbf24;
+  --green-dim: rgba(16, 185, 129, 0.12);
+  --violet: #a78bfa;
+  --violet-dim: rgba(167, 139, 250, 0.12);
+  --text-primary: #e8ecf2;
+  --text-secondary: #8b95a8;
+  --text-muted: #4a5568;
 }
 
 * {
@@ -43,66 +44,49 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────── */
+/* ── Scrollbar ─────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* ── Background grid ──────────────────────────────────────── */
-.bg-grid {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
-
-/* ── Score bar fill animation ─────────────────────────────── */
+/* ── Score bar fill ────────────────────────────── */
 .score-fill {
-  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Rank glow ─────────────────────────────────────────────── */
-.rank-1-glow {
-  box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3), 0 0 16px rgba(249, 115, 22, 0.25);
-}
-
-/* ── Card hover ──────────────────────────────────────────── */
+/* ── Card ──────────────────────────────────────── */
 .engineer-card {
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 .engineer-card:hover {
-  background: var(--bg-card-hover);
+  background: var(--bg-card-hover) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-1px);
+}
+.engineer-card:active {
+  transform: translateY(0);
 }
 
-/* ── Table row hover ─────────────────────────────────────── */
-.table-row {
-  transition: background 0.1s ease;
-}
-.table-row:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-.table-row.selected {
-  background: rgba(249, 115, 22, 0.08);
-}
-
-/* ── Collapsible methodology ─────────────────────────────── */
+/* ── Methodology ───────────────────────────────── */
 .methodology-panel {
   overflow: hidden;
-  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.25s ease;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
 }
 .methodology-panel.open {
-  max-height: 120px;
+  max-height: 250px;
   opacity: 1;
 }
 .methodology-panel.closed {
@@ -110,10 +94,65 @@ body {
   opacity: 0;
 }
 
-/* ── Graph overlay ───────────────────────────────────────── */
-.node-overlay {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(10, 13, 20, 0.88);
-  border: 1px solid rgba(249, 115, 22, 0.25);
+/* ── Stagger load animation ────────────────────── */
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.card-animate {
+  animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    max-height: 800px;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in {
+  animation: fadeIn 0.6s ease both;
+}
+
+/* ── Overlay panel ─────────────────────────────── */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.detail-slide-in {
+  animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Noise texture overlay ─────────────────────── */
+.noise-overlay::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  opacity: 0.015;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px;
+  z-index: 9999;
 }

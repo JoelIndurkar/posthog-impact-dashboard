@@ -1,156 +1,250 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Engineer, GraphEdge, GraphNode } from "../types";
 
-/* ── Dynamically import to avoid SSR (canvas APIs) ─────────── */
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
   loading: () => (
     <div
-      className="w-full h-full flex items-center justify-center"
-      style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)", fontSize: 12 }}
+      className="w-full h-full flex items-center justify-center fade-in"
+      style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)", fontSize: 11 }}
     >
-      Initialising graph…
+      Initialising graph...
     </div>
   ),
 });
 
-/* ── Helpers ─────────────────────────────────────────────────── */
+/* ── Helpers ──────────────────────────────────────── */
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * Math.max(0, Math.min(1, t));
 }
 
-function nodeRadius(impactScore: number) {
-  return lerp(4, 14, impactScore);
-}
-
-/* ── Node info overlay ───────────────────────────────────────── */
-function NodeOverlay({
+/* ── Node detail overlay ─────────────────────────── */
+function NodeDetail({
   engineer,
   rank,
+  connectedEdges,
+  engineerMap,
   onClose,
 }: {
   engineer: Engineer;
   rank: number;
+  connectedEdges: { source: string; target: string; weight: number }[];
+  engineerMap: Map<string, Engineer>;
   onClose: () => void;
 }) {
+  const reviewsGiven = connectedEdges
+    .filter((e) => e.source === engineer.login)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+  const reviewsReceived = connectedEdges
+    .filter((e) => e.target === engineer.login)
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+
+  const eq = engineer.executionQuality;
+  const mono = { fontFamily: "var(--font-dm-mono)" } as const;
+
   return (
     <div
-      className="node-overlay absolute bottom-4 left-4 rounded-xl p-4 w-64 z-10"
-      style={{ pointerEvents: "auto" }}
+      className="absolute top-3 right-3 z-20 rounded-xl detail-slide-in"
+      style={{
+        width: 280,
+        background: "rgba(9, 12, 20, 0.97)",
+        backdropFilter: "blur(20px)",
+        border: "1px solid rgba(249,115,22,0.2)",
+        boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        pointerEvents: "auto",
+        maxHeight: "calc(100% - 24px)",
+        overflowY: "auto",
+      }}
     >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-2.5 p-3 pb-2">
         <Image
           src={engineer.avatar_url}
           alt={engineer.login}
-          width={40}
-          height={40}
+          width={34}
+          height={34}
           className="rounded-full"
-          style={{ border: "2px solid rgba(249,115,22,0.4)" }}
+          style={{ border: "2px solid rgba(249,115,22,0.35)" }}
         />
         <div className="flex-1 min-w-0">
-          <div
-            className="text-sm font-bold text-white truncate"
-            style={{ fontFamily: "var(--font-syne)" }}
-          >
+          <div className="text-[13px] font-bold text-white truncate" style={mono}>
             {engineer.login}
           </div>
-          <div
-            className="text-[10px]"
-            style={{ color: "var(--accent)", fontFamily: "var(--font-dm-mono)" }}
-          >
-            Rank #{rank}
+          <div className="text-[10px]" style={{ color: "var(--accent)", ...mono }}>
+            Rank #{rank} · Impact {(engineer.impactScore * 100).toFixed(1)}
           </div>
         </div>
         <button
           onClick={onClose}
-          className="text-slate-500 hover:text-white transition-colors text-base leading-none"
-          style={{ fontFamily: "var(--font-dm-mono)" }}
+          className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 transition-colors text-xs"
+          style={mono}
         >
           ✕
         </button>
       </div>
 
-      {/* Score trio */}
+      {/* Formula — human readable */}
       <div
-        className="grid grid-cols-3 gap-2 mb-3 rounded-lg p-2"
-        style={{ background: "rgba(255,255,255,0.04)" }}
+        className="mx-3 mb-2 rounded-lg px-2.5 py-1.5 text-[9px] leading-relaxed"
+        style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", ...mono }}
       >
-        {[
-          { label: "Impact", value: engineer.impactScore, color: "var(--accent)" },
-          { label: "DORA", value: engineer.doraScore, color: "var(--green)" },
-          { label: "PageRank", value: engineer.pageRankScore, color: "var(--blue)" },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="text-center">
-            <div
-              className="text-base font-bold leading-none"
-              style={{ color, fontFamily: "var(--font-dm-mono)" }}
-            >
-              {(value * 100).toFixed(0)}
-            </div>
-            <div
-              className="text-[9px] uppercase tracking-wider mt-0.5"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {label}
-            </div>
-          </div>
-        ))}
+        <span style={{ color: "#10b981" }}>Exec {Math.round(engineer.executionQualityScore * 100)}</span>
+        <span style={{ color: "var(--text-muted)" }}> × 40% + </span>
+        <span style={{ color: "#3b82f6" }}>Collab {Math.round(engineer.collaborationScore * 100)}</span>
+        <span style={{ color: "var(--text-muted)" }}> × 30% + </span>
+        <span style={{ color: "#a78bfa" }}>Health {Math.round(engineer.codeHealthScore * 100)}</span>
+        <span style={{ color: "var(--text-muted)" }}> × 30% = </span>
+        <span className="font-bold" style={{ color: "var(--accent)" }}>{(engineer.impactScore * 100).toFixed(1)}</span>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-        {[
-          { label: "PRs Merged", value: engineer.prsMerged },
-          { label: "PRs Authored", value: engineer.prsAuthored },
-          { label: "Reviews Given", value: engineer.reviewsGiven },
-          { label: "Reviews Recv'd", value: engineer.reviewsReceived },
-        ].map(({ label, value }) => (
-          <div key={label}>
-            <div
-              className="text-xs font-semibold text-white"
-              style={{ fontFamily: "var(--font-dm-mono)" }}
-            >
-              {value}
+      {/* 3 Pillars — readable */}
+      <div className="mx-3 mb-2 flex flex-col gap-1.5">
+        {/* Execution */}
+        <div className="rounded-lg p-2" style={{ background: "rgba(16,185,129,0.05)" }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[9px] font-medium" style={{ color: "#10b981", ...mono }}>Execution Quality</span>
+            <span className="text-[11px] font-bold tabular-nums" style={{ color: "#10b981", ...mono }}>
+              {Math.round(engineer.executionQualityScore * 100)}
+            </span>
+          </div>
+          {[
+            { label: "Merge pace", v: eq.mergeCadence },
+            { label: "Lead time", v: eq.leadTime },
+            { label: "Fail rate", v: eq.changeFailureRate },
+            { label: "Recency", v: eq.recencyScore },
+            { label: "PR complexity", v: eq.prEffortScore },
+          ].map((m) => (
+            <div key={m.label} className="flex justify-between text-[8.5px] py-px" style={mono}>
+              <span style={{ color: "var(--text-muted)" }}>{m.label}</span>
+              <span style={{ color: "#10b981" }}>{Math.round(m.v * 100)}</span>
             </div>
-            <div
-              className="text-[9px]"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {label}
+          ))}
+        </div>
+
+        {/* Collab + Health side by side */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <div className="rounded-lg p-2" style={{ background: "rgba(59,130,246,0.05)" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-medium" style={{ color: "#3b82f6", ...mono }}>Collaboration</span>
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#3b82f6", ...mono }}>
+                {Math.round(engineer.collaborationScore * 100)}
+              </span>
+            </div>
+            <div className="text-[8.5px]" style={{ color: "var(--text-muted)", ...mono }}>
+              <div>{engineer.reviewsGiven} reviews</div>
+              <div>{engineer.avgCommentsPerReview.toFixed(1)} avg cmts</div>
             </div>
           </div>
-        ))}
+          <div className="rounded-lg p-2" style={{ background: "rgba(167,139,250,0.05)" }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[9px] font-medium" style={{ color: "#a78bfa", ...mono }}>Code Health</span>
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: "#a78bfa", ...mono }}>
+                {Math.round(engineer.codeHealthScore * 100)}
+              </span>
+            </div>
+            <div className="text-[8.5px]" style={{ color: "var(--text-muted)", ...mono }}>
+              <div>Churn {(engineer.churnRate * 100).toFixed(0)}%</div>
+              <div>Reliab {(engineer.mergeReliability * 100).toFixed(0)}%</div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Summary */}
-      {engineer.summary && (
-        <p
-          className="text-[10px] leading-relaxed mt-3 pt-3"
-          style={{
-            color: "var(--text-muted)",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            fontFamily: "var(--font-dm-mono)",
-          }}
+      {/* Edge weight explanation */}
+      {(reviewsGiven.length > 0 || reviewsReceived.length > 0) && (
+        <div
+          className="mx-3 mb-2 rounded-md px-2 py-1.5 text-[8.5px] leading-relaxed"
+          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.04)", ...mono }}
         >
-          {engineer.summary}
-        </p>
+          <span style={{ color: "var(--text-muted)" }}>
+            Edge weight = review count × comment depth × reviewer{"'"}s execution score.{" "}
+            Higher weight = more frequent, deeper reviews from stronger engineers.
+          </span>
+        </div>
+      )}
+
+      {/* Review connections */}
+      {reviewsGiven.length > 0 && (
+        <div className="mx-3 mb-2">
+          <div className="text-[9px] font-medium mb-1" style={{ color: "var(--text-secondary)", ...mono }}>
+            Reviewed these engineers{"'"} PRs
+          </div>
+          {reviewsGiven.map((e) => (
+            <div key={e.target} className="flex items-center text-[10px] py-0.5" style={mono}>
+              <span style={{ color: "var(--text-secondary)" }}>→ {e.target}</span>
+              <span className="flex-1" />
+              <span className="tabular-nums font-medium" style={{ color: "var(--accent)" }}>{e.weight.toFixed(1)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {reviewsReceived.length > 0 && (
+        <div className="mx-3 mb-3">
+          <div className="text-[9px] font-medium mb-1" style={{ color: "var(--text-secondary)", ...mono }}>
+            Got reviews from these engineers
+          </div>
+          {reviewsReceived.map((e) => (
+            <div key={e.source} className="flex items-center text-[10px] py-0.5" style={mono}>
+              <span style={{ color: "var(--text-secondary)" }}>← {e.source}</span>
+              <span className="flex-1" />
+              <span className="tabular-nums font-medium" style={{ color: "var(--accent)" }}>{e.weight.toFixed(1)}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-/* ── Main graph panel ────────────────────────────────────────── */
+/* ── Edge tooltip ────────────────────────────────── */
+function EdgeTooltip({
+  edge,
+  engineerMap,
+  pos,
+}: {
+  edge: { source: string; target: string; weight: number };
+  engineerMap: Map<string, Engineer>;
+  pos: { x: number; y: number };
+}) {
+  const reviewer = engineerMap.get(edge.source);
+  const reviewerEQ = reviewer?.executionQualityScore ?? 0;
+
+  return (
+    <div
+      className="absolute z-30 rounded-lg px-3 py-2 pointer-events-none"
+      style={{
+        left: pos.x + 14,
+        top: pos.y - 10,
+        background: "rgba(9,12,20,0.96)",
+        backdropFilter: "blur(16px)",
+        border: "1px solid rgba(249,115,22,0.25)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <div className="text-[10px] mb-1" style={{ fontFamily: "var(--font-dm-mono)" }}>
+        <span style={{ color: "var(--accent)" }}>{edge.source}</span>
+        <span style={{ color: "var(--text-secondary)" }}> reviewed </span>
+        <span style={{ color: "var(--blue)" }}>{edge.target}</span>
+      </div>
+      <div className="text-[9px]" style={{ fontFamily: "var(--font-dm-mono)" }}>
+        <span style={{ color: "var(--text-secondary)" }}>Edge weight: </span>
+        <span className="font-bold" style={{ color: "var(--accent)" }}>{edge.weight.toFixed(1)}</span>
+      </div>
+      <div className="text-[8px] mt-0.5" style={{ fontFamily: "var(--font-dm-mono)", color: "var(--text-muted)" }}>
+        = review count × comment depth × {reviewerEQ.toFixed(2)} EQ
+      </div>
+    </div>
+  );
+}
+
+/* ── Main panel ──────────────────────────────────── */
 interface Props {
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };
   engineers: Engineer[];
@@ -158,54 +252,33 @@ interface Props {
   onSelectLogin: (login: string | null) => void;
 }
 
-export default function GraphPanel({
-  graph,
-  engineers,
-  selectedLogin,
-  onSelectLogin,
-}: Props) {
+export default function GraphPanel({ graph, engineers, selectedLogin, onSelectLogin }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
   const [dims, setDims] = useState({ w: 800, h: 600 });
   const [highlightNodes, setHighlightNodes] = useState(new Set<string>());
   const [highlightLinks, setHighlightLinks] = useState(new Set<string>());
-  const [hoveredLogin, setHoveredLogin] = useState<string | null>(null);
+  const [hoveredEdge, setHoveredEdge] = useState<{
+    edge: { source: string; target: string; weight: number };
+    pos: { x: number; y: number };
+  } | null>(null);
 
-  /* ── Engineer lookup maps ────────────────────────── */
-  const engineerMap = useMemo(
-    () => new Map(engineers.map((e) => [e.login, e])),
-    [engineers]
-  );
-  const engineerRankMap = useMemo(
-    () => new Map(engineers.map((e, i) => [e.login, i + 1])),
-    [engineers]
-  );
+  const engineerMap = useMemo(() => new Map(engineers.map((e) => [e.login, e])), [engineers]);
+  const engineerRankMap = useMemo(() => new Map(engineers.map((e, i) => [e.login, i + 1])), [engineers]);
   const top5 = useMemo(() => new Set(engineers.slice(0, 5).map((e) => e.login)), [engineers]);
   const top20 = useMemo(() => new Set(engineers.slice(0, 20).map((e) => e.login)), [engineers]);
 
-  /* ── Build graph data ────────────────────────────── */
+  // Keep top 400 edges to reduce noise
   const graphData = useMemo(() => {
-    const nodes = graph.nodes.map((n) => ({
-      id: n.id,
-      impactScore: n.impactScore,
-      doraScore: n.doraScore,
-    }));
-
-    // Filter edges with weight > 0, cap at top 800 heaviest for readability
+    const nodes = graph.nodes.map((n) => ({ id: n.id, impactScore: n.impactScore, doraScore: n.doraScore }));
     const links = [...graph.edges]
       .filter((e) => e.weight > 0)
       .sort((a, b) => b.weight - a.weight)
-      .slice(0, 800)
-      .map((e) => ({
-        source: e.source,
-        target: e.target,
-        weight: e.weight,
-      }));
-
+      .slice(0, 400)
+      .map((e) => ({ source: e.source, target: e.target, weight: e.weight }));
     return { nodes, links };
   }, [graph]);
 
-  /* ── Link lookup for highlighting ────────────────── */
   const linksByNode = useMemo(() => {
     const map = new Map<string, { neighbor: string; linkKey: string }[]>();
     graphData.links.forEach((link) => {
@@ -220,7 +293,22 @@ export default function GraphPanel({
     return map;
   }, [graphData.links]);
 
-  /* ── Respond to external selectedLogin (from table) ─ */
+  const selectedEdges = useMemo(() => {
+    if (!selectedLogin) return [];
+    return graphData.links
+      .filter((l) => {
+        const src = typeof l.source === "object" ? (l.source as any).id : l.source;
+        const tgt = typeof l.target === "object" ? (l.target as any).id : l.target;
+        return src === selectedLogin || tgt === selectedLogin;
+      })
+      .map((l) => ({
+        source: typeof l.source === "object" ? (l.source as any).id : l.source,
+        target: typeof l.target === "object" ? (l.target as any).id : l.target,
+        weight: l.weight,
+      }));
+  }, [selectedLogin, graphData.links]);
+
+  // Sync selection → highlights, center camera gently
   useEffect(() => {
     if (!selectedLogin) {
       setHighlightNodes(new Set());
@@ -235,22 +323,18 @@ export default function GraphPanel({
       setHighlightNodes(neighbors);
       setHighlightLinks(links);
 
-      // zoom to node
+      // Gentle zoom — 2x not 3.5x, so nodes stay usable
       if (graphRef.current) {
         const node = graphData.nodes.find((n) => n.id === selectedLogin);
-        if (node) {
-          graphRef.current.centerAt(
-            (node as any).x,
-            (node as any).y,
-            600
-          );
-          graphRef.current.zoom(3, 600);
+        if (node && Number.isFinite((node as any).x)) {
+          graphRef.current.centerAt((node as any).x, (node as any).y, 500);
+          graphRef.current.zoom(2, 500);
         }
       }
     }
   }, [selectedLogin, linksByNode, graphData.nodes]);
 
-  /* ── Resize observer ─────────────────────────────── */
+  // Resize
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -262,214 +346,232 @@ export default function GraphPanel({
     return () => obs.disconnect();
   }, []);
 
-  /* ── Force simulation tuning ─────────────────────── */
+  // Force tuning
   useEffect(() => {
     if (!graphRef.current) return;
     const charge = graphRef.current.d3Force("charge");
-    if (charge) charge.strength(-120);
+    if (charge) charge.strength(-80).distanceMax(350);
     const link = graphRef.current.d3Force("link");
-    if (link) link.distance(60).strength(0.3);
-    const collision = graphRef.current.d3Force("collide");
-    if (collision) collision?.radius?.((n: any) => nodeRadius(n.impactScore) + 4);
+    if (link) link.distance(50).strength(0.15);
   }, []);
 
-  /* ── Callbacks ───────────────────────────────────── */
   const handleNodeClick = useCallback(
     (node: any) => {
+      setHoveredEdge(null);
       const id = node.id as string;
-      if (selectedLogin === id) {
-        onSelectLogin(null);
-        setHighlightNodes(new Set());
-        setHighlightLinks(new Set());
-        return;
-      }
-      onSelectLogin(id);
-      const neighbors = new Set<string>([id]);
-      const links = new Set<string>();
-      (linksByNode.get(id) || []).forEach(({ neighbor, linkKey }) => {
-        neighbors.add(neighbor);
-        links.add(linkKey);
-      });
-      setHighlightNodes(neighbors);
-      setHighlightLinks(links);
+      onSelectLogin(selectedLogin === id ? null : id);
     },
-    [selectedLogin, onSelectLogin, linksByNode]
+    [selectedLogin, onSelectLogin]
   );
 
   const handleBackgroundClick = useCallback(() => {
     onSelectLogin(null);
-    setHighlightNodes(new Set());
-    setHighlightLinks(new Set());
+    setHoveredEdge(null);
   }, [onSelectLogin]);
 
-  const handleNodeHover = useCallback((node: any) => {
-    setHoveredLogin(node ? (node.id as string) : null);
+  const handleLinkHover = useCallback((link: any, event?: MouseEvent) => {
+    if (!link || !event || !containerRef.current) {
+      setHoveredEdge(null);
+      return;
+    }
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      setHoveredEdge(null);
+      return;
+    }
+    const src = typeof link.source === "object" ? link.source.id : link.source;
+    const tgt = typeof link.target === "object" ? link.target.id : link.target;
+    setHoveredEdge({ edge: { source: src, target: tgt, weight: link.weight }, pos: { x, y } });
   }, []);
 
-  /* ── Visual callbacks ────────────────────────────── */
-  const nodeColor = useCallback(
-    (node: any): string => {
-      const id = node.id as string;
-      const hasHighlight = highlightNodes.size > 0;
-
-      if (hasHighlight) {
-        if (!highlightNodes.has(id)) return "rgba(20,25,40,0.4)";
-        if (id === selectedLogin) return "#f97316";
-        return top5.has(id) ? "#fb923c" : "#60a5fa";
-      }
-
-      if (top5.has(id)) return "#f97316";
-      const rank = engineerRankMap.get(id) ?? 100;
-      if (rank <= 10) return "#3b82f6";
-      if (rank <= 30) return "#1d4ed8";
-      return "#1e3a5f";
-    },
-    [highlightNodes, selectedLogin, top5, engineerRankMap]
-  );
-
+  /* ── Canvas rendering — KEY FIX: divide by globalScale for constant screen size ── */
   const nodeCanvasObject = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const id = node.id as string;
-      const r = nodeRadius(node.impactScore);
       const x = node.x as number;
       const y = node.y as number;
-
-      // Positions are undefined for the first few simulation frames — skip.
       if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-      const color = nodeColor(node);
+
+      // Constant SCREEN-SPACE radius: 3–12px on screen regardless of zoom
+      const screenR = lerp(3, 12, node.impactScore);
+      const r = screenR / globalScale;
+
       const isSelected = id === selectedLogin;
       const isTop5 = top5.has(id);
       const isTop20 = top20.has(id);
-      const hasHighlight = highlightNodes.size > 0;
-      const dimmed = hasHighlight && !highlightNodes.has(id);
+      const hasHL = highlightNodes.size > 0;
+      const dimmed = hasHL && !highlightNodes.has(id);
 
-      // Glow for selected / top5
-      if ((isSelected || (isTop5 && !dimmed)) && !dimmed) {
-        const grd = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2.5);
-        grd.addColorStop(0, isSelected ? "rgba(249,115,22,0.4)" : "rgba(249,115,22,0.2)");
+      let color: string;
+      let alpha = 1;
+      if (hasHL) {
+        if (dimmed) {
+          color = "#1a1f30";
+          alpha = 0.3;
+        } else if (isSelected) {
+          color = "#f97316";
+        } else if (isTop5) {
+          color = "#fb923c";
+        } else {
+          color = "#60a5fa";
+        }
+      } else {
+        if (isTop5) color = "#f97316";
+        else if ((engineerRankMap.get(id) ?? 100) <= 10) color = "#3b82f6";
+        else if ((engineerRankMap.get(id) ?? 100) <= 30) color = "#1d4ed8";
+        else color = "#1e3a5f";
+      }
+
+      // Glow for selected node
+      if (isSelected && Number.isFinite(r)) {
+        const glowR = r * 3;
+        const grd = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowR);
+        grd.addColorStop(0, "rgba(249,115,22,0.3)");
         grd.addColorStop(1, "rgba(249,115,22,0)");
         ctx.beginPath();
-        ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+        ctx.arc(x, y, glowR, 0, Math.PI * 2);
         ctx.fillStyle = grd;
         ctx.fill();
       }
 
       // Node circle
+      ctx.globalAlpha = alpha;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = color;
       ctx.fill();
 
-      // Border ring for selected
+      // Selection ring
       if (isSelected) {
         ctx.beginPath();
-        ctx.arc(x, y, r + 2, 0, Math.PI * 2);
-        ctx.strokeStyle = "#f97316";
-        ctx.lineWidth = 1.5;
+        ctx.arc(x, y, r + 2 / globalScale, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(249,115,22,0.6)";
+        ctx.lineWidth = 1.5 / globalScale;
         ctx.stroke();
       }
 
-      // Label (top 20 always; others only when zoomed in enough)
-      const showLabel = isTop20 || globalScale > 2.5;
-      if (showLabel && !dimmed) {
-        const fontSize = Math.max(9, 10 / globalScale);
-        ctx.font = `${fontSize}px 'DM Mono', monospace`;
+      ctx.globalAlpha = 1;
+
+      // Labels: always show top20 names, others only when zoomed
+      const showLabel = (!dimmed && isTop20) || (!dimmed && globalScale > 4);
+      if (showLabel) {
+        // Constant screen-size font
+        const fontSize = (isTop5 ? 11 : 9) / globalScale;
+        ctx.font = `${isTop5 ? "bold " : ""}${fontSize}px 'DM Mono', monospace`;
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = isSelected
+        ctx.fillStyle = dimmed
+          ? "transparent"
+          : isSelected
           ? "#f97316"
           : isTop5
-          ? "rgba(255,200,150,0.9)"
-          : "rgba(148,163,184,0.7)";
-        ctx.fillText(id, x, y + r + 2);
+          ? "rgba(255,210,170,0.85)"
+          : "rgba(148,163,184,0.5)";
+        ctx.fillText(id, x, y + r + 2 / globalScale);
       }
     },
-    [nodeColor, selectedLogin, top5, top20, highlightNodes]
+    [selectedLogin, top5, top20, highlightNodes, engineerRankMap]
   );
 
-  const linkColor = useCallback(
-    (link: any): string => {
-      if (highlightNodes.size === 0) return "rgba(100,116,139,0.12)";
-      const src = typeof link.source === "object" ? link.source.id : link.source;
-      const tgt = typeof link.target === "object" ? link.target.id : link.target;
-      const key = `${src}→${tgt}`;
-      if (highlightLinks.has(key)) return "rgba(249,115,22,0.5)";
-      return "rgba(20,25,40,0.15)";
+  const linkCanvasObject = useCallback(
+    (link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+      const src = typeof link.source === "object" ? link.source : { x: 0, y: 0, id: link.source };
+      const tgt = typeof link.target === "object" ? link.target : { x: 0, y: 0, id: link.target };
+      if (!Number.isFinite(src.x) || !Number.isFinite(tgt.x)) return;
+
+      const srcId = src.id as string;
+      const tgtId = tgt.id as string;
+      const key = `${srcId}→${tgtId}`;
+      const isHL = highlightLinks.has(key);
+      const hasHL = highlightNodes.size > 0;
+      const w = link.weight as number;
+
+      ctx.beginPath();
+      ctx.moveTo(src.x, src.y);
+      ctx.lineTo(tgt.x, tgt.y);
+
+      if (hasHL) {
+        if (isHL) {
+          ctx.strokeStyle = "rgba(249,115,22,0.35)";
+          ctx.lineWidth = Math.min(2, Math.max(0.3, w / 3)) / globalScale;
+        } else {
+          ctx.strokeStyle = "rgba(15,20,35,0.15)";
+          ctx.lineWidth = 0.3 / globalScale;
+        }
+      } else {
+        ctx.strokeStyle = "rgba(100,116,139,0.06)";
+        ctx.lineWidth = Math.min(1, Math.max(0.1, w / 5)) / globalScale;
+      }
+      ctx.stroke();
+
+      // Edge labels: only top 8 heaviest highlighted edges when zoomed > 1.5x
+      if (isHL && globalScale > 1.5 && w > 0.3) {
+        const midX = (src.x + tgt.x) / 2;
+        const midY = (src.y + tgt.y) / 2;
+        const fontSize = 7 / globalScale;
+        const label = w.toFixed(1);
+
+        ctx.font = `${fontSize}px 'DM Mono', monospace`;
+        const tw = ctx.measureText(label).width;
+        const pad = 1.5 / globalScale;
+
+        ctx.fillStyle = "rgba(6,8,16,0.85)";
+        ctx.fillRect(midX - tw / 2 - pad, midY - fontSize / 2 - pad, tw + pad * 2, fontSize + pad * 2);
+
+        ctx.fillStyle = "rgba(249,115,22,0.7)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, midX, midY);
+      }
     },
-    [highlightNodes, highlightLinks]
+    [highlightLinks, highlightNodes]
   );
 
-  const linkWidth = useCallback((link: any): number => {
-    const w = (link as any).weight as number;
-    return Math.min(4, Math.max(0.3, w / 25));
-  }, []);
-
-  /* ── Overlay data ────────────────────────────────── */
-  const overlayLogin = selectedLogin || hoveredLogin;
-  const overlayEngineer = overlayLogin ? engineerMap.get(overlayLogin) : null;
-  const overlayRank = overlayLogin ? (engineerRankMap.get(overlayLogin) ?? 0) : 0;
-
-  /* ── Legend ──────────────────────────────────────── */
-  const LegendItem = ({
-    color,
-    label,
-  }: {
-    color: string;
-    label: string;
-  }) => (
-    <div className="flex items-center gap-1.5">
-      <div
-        className="w-2 h-2 rounded-full shrink-0"
-        style={{ background: color }}
-      />
-      <span>{label}</span>
-    </div>
-  );
+  const selectedEngineer = selectedLogin ? engineerMap.get(selectedLogin) : null;
+  const selectedRank = selectedLogin ? (engineerRankMap.get(selectedLogin) ?? 0) : 0;
 
   return (
-    <div
-      className="flex flex-col flex-1 min-w-0"
-      style={{ background: "var(--bg)" }}
-    >
-      {/* Panel header */}
+    <div className="flex flex-col flex-1 min-w-0" style={{ background: "var(--bg)" }}>
+      {/* Header bar */}
       <div
-        className="flex-none flex items-center justify-between px-4 py-2"
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: "var(--bg-panel)",
-          height: "36px",
-        }}
+        className="flex-none flex items-center justify-between px-4"
+        style={{ borderBottom: "1px solid var(--border)", background: "var(--bg-panel)", height: 36 }}
       >
         <span
-          className="text-[10px] uppercase tracking-widest font-semibold"
+          className="text-[9px] uppercase tracking-[0.12em] font-semibold"
           style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
         >
           Review Network
         </span>
         <div
-          className="flex items-center gap-4 text-[10px]"
+          className="flex items-center gap-4 text-[9px]"
           style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
         >
-          <LegendItem color="var(--accent)" label="Top 5" />
-          <LegendItem color="#3b82f6" label="Top 10" />
-          <LegendItem color="#1d4ed8" label="Top 30" />
-          <LegendItem color="#1e3a5f" label="Others" />
-          <span
-            className="ml-2 px-2 py-0.5 rounded"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}
-          >
-            {graph.nodes.length} nodes · {Math.min(800, graph.edges.filter((e) => e.weight > 0).length)} edges
+          {[
+            { c: "var(--accent)", l: "Top 5" },
+            { c: "#3b82f6", l: "Top 10" },
+            { c: "#1d4ed8", l: "Top 30" },
+            { c: "#1e3a5f", l: "Others" },
+          ].map((d) => (
+            <span key={d.l} className="flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: d.c }} />
+              {d.l}
+            </span>
+          ))}
+          <span style={{ opacity: 0.4, marginLeft: 4 }}>
+            {graphData.nodes.length} nodes · {graphData.links.length} edges
           </span>
         </div>
       </div>
 
-      {/* Graph canvas area */}
+      {/* Graph canvas */}
       <div
         ref={containerRef}
         className="relative flex-1"
         style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(15,22,36,1) 0%, rgba(7,9,15,1) 70%)",
+          background: "radial-gradient(ellipse at 50% 40%, rgba(12,16,28,1) 0%, rgba(6,8,16,1) 70%)",
         }}
       >
         {dims.w > 0 && (
@@ -480,48 +582,42 @@ export default function GraphPanel({
             height={dims.h}
             backgroundColor="transparent"
             nodeId="id"
-            nodeVal={(n: any) => nodeRadius(n.impactScore) ** 2}
+            nodeVal={(n: any) => lerp(3, 12, n.impactScore)}
             nodeRelSize={1}
-            nodeColor={nodeColor}
             nodeCanvasObject={nodeCanvasObject}
             nodeCanvasObjectMode={() => "replace"}
-            linkSource="source"
-            linkTarget="target"
-            linkColor={linkColor}
-            linkWidth={linkWidth}
-            linkDirectionalParticles={0}
+            linkCanvasObject={linkCanvasObject}
+            linkCanvasObjectMode={() => "replace"}
             onNodeClick={handleNodeClick}
             onBackgroundClick={handleBackgroundClick}
-            onNodeHover={handleNodeHover}
-            cooldownTicks={200}
-            d3AlphaDecay={0.02}
-            d3VelocityDecay={0.4}
-            enableNodeDrag={true}
-            enableZoomInteraction={true}
-            enablePanInteraction={true}
+            onLinkHover={handleLinkHover as any}
+            cooldownTicks={150}
+            d3AlphaDecay={0.025}
+            d3VelocityDecay={0.45}
+            enableNodeDrag
+            enableZoomInteraction
+            enablePanInteraction
           />
         )}
 
-        {/* Node detail overlay */}
-        {overlayEngineer && (
-          <NodeOverlay
-            engineer={overlayEngineer}
-            rank={overlayRank}
-            onClose={() => {
-              onSelectLogin(null);
-              setHighlightNodes(new Set());
-              setHighlightLinks(new Set());
-            }}
+        {hoveredEdge && <EdgeTooltip edge={hoveredEdge.edge} engineerMap={engineerMap} pos={hoveredEdge.pos} />}
+
+        {selectedEngineer && (
+          <NodeDetail
+            engineer={selectedEngineer}
+            rank={selectedRank}
+            connectedEdges={selectedEdges}
+            engineerMap={engineerMap}
+            onClose={() => onSelectLogin(null)}
           />
         )}
 
-        {/* Click hint */}
-        {!overlayEngineer && (
+        {!selectedEngineer && !hoveredEdge && (
           <div
-            className="absolute bottom-4 left-4 text-[10px] pointer-events-none"
-            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)" }}
+            className="absolute bottom-3 left-3 text-[9px] pointer-events-none fade-in"
+            style={{ color: "var(--text-muted)", fontFamily: "var(--font-dm-mono)", animationDelay: "0.8s" }}
           >
-            Click a node to explore connections
+            Click a node to explore · Hover edges to see the math
           </div>
         )}
       </div>
